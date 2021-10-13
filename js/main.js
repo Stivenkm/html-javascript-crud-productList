@@ -9,23 +9,25 @@ class ProductList {
 
     constructor(formFields) {
         this.jsonProduct = formFields;
-        this.selectedRow = null;
     }
 
+    /*
     onFormSubmit = (e) => {
-        //e.preventDefault();
         let formData = this.readFormData();
-        //console.log(formData)
+        //this.add();
+        //console.log(add())
         (this.selectedRow != null) ? this.updateRecord(formData) : this.insertNewRecord(formData);
         this.resetForm();
     }
+    */
 
     add = () => {
         let newProduct = this.readFormData()
         let currentData = this.read() || []
         let finalData = [...currentData, newProduct]
         localStorage.setItem(DB_NAME, JSON.stringify(finalData))
-        this.updateRecord(finalData) 
+        this.refreshData()
+        this.resetForm();
     }
 
     read = () => JSON.parse(localStorage.getItem(DB_NAME))
@@ -40,48 +42,34 @@ class ProductList {
         }
     }
 
-    //Insert the data (Create)
-    insertNewRecord = (data) => {
-        let table = document.getElementById(DB_NAME).getElementsByTagName(TABLE_NAME)[0];
-        let newRow = table.insertRow(table.length);
-        let cell1 = newRow.insertCell(0);
-        cell1.innerHTML = data.code;
-        let cell2 = newRow.insertCell(1);
-        cell2.innerHTML = data.product;
-        let cell3 = newRow.insertCell(2);
-        cell3.innerHTML = data.qty;
-        let cell4 = newRow.insertCell(3);
-        cell4.innerHTML = data.price;
-        let cell5 = newRow.insertCell(4);
-        cell5.innerHTML = `<button onClick='objetoProductList.onEdit(this)'>Edit</button> <button onClick='objetoProductList.onDelete(this)'>Delete</button>`
-        localStorage.setItem(DB_NAME, JSON.stringify(data))
-    }
-
     //Edit the data (Update)
-    onEdit = (td) => {
+    onEdit = (td,i) => {
         let selectedRow = td.parentElement.parentElement;
-        console.log(selectedRow)
         document.getElementById(this.jsonProduct.code).value = selectedRow.cells[0].innerHTML;
         document.getElementById(this.jsonProduct.product).value = selectedRow.cells[1].innerHTML;
         document.getElementById(this.jsonProduct.qty).value = selectedRow.cells[2].innerHTML;
         document.getElementById(this.jsonProduct.price).value = selectedRow.cells[3].innerHTML;
-    }
+        //document.getElementById(DB_NAME).deleteRow(selectedRow.rowIndex);
+        this.onDelete(td,i);  
 
-    updateRecord = (formData) => {
-        selectedRow.cells[0].innerHTML = formData.code;
-        selectedRow.cells[1].innerHTML = formData.product;
-        selectedRow.cells[2].innerHTML = formData.qty;
-        selectedRow.cells[3].innerHTML = formData.price;
-        localStorage.setItem(DB_NAME, JSON.stringify(formData))
+    }
+    update(i){
+        //this.add();
+        localStorage.setItem(DB_NAME, JSON.stringify(listaProductos))
+        //document.getElementById(DB_NAME).deleteRow(selectedRow.rowIndex);  
+        this.refreshData();
     }
 
     //Delete the data (Delete)
-    onDelete = (td) => {
-
-        if (confirm('Do you want to delete this record?')) {
+    onDelete = (td,i) => {
+        /*if (confirm('Do you want to delete this record?')) {*/
             let row = td.parentElement.parentElement;
             document.getElementById(DB_NAME).deleteRow(row.rowIndex);
-        }
+       // }
+        let listaProductos = this.read();
+        listaProductos.splice(i, 1)
+        localStorage.setItem(DB_NAME, JSON.stringify(listaProductos))
+        this.refreshData()
         this.resetForm();
     }
 
@@ -91,6 +79,26 @@ class ProductList {
         document.getElementById(this.jsonProduct.product).value = '';
         document.getElementById(this.jsonProduct.qty).value = '';
         document.getElementById(this.jsonProduct.price).value = '';
+    }
+    refreshData = () => {
+        let listaProductos = this.read();
+        listaProductos = listaProductos.map((obj, i) => `
+            <tr>
+                <td>${i+1}</td>
+                <td>${obj.code}</td>
+                <td>${obj.product}</td>
+                <td>${obj.qty}</td>
+                <td>${obj.price}</td>
+                <td class="colActions">
+                
+                <button onClick='objetoProductList.onEdit(this,${i})'>Edit</button> 
+                <button onClick='objetoProductList.onDelete(this,${i})'>Delete</button>
+                <button onClick='objetoProductList.update(this,${i})'>Update</button>
+                </td>
+            </tr>`)
+
+        document.getElementById(TABLE_NAME).innerHTML = listaProductos.join(' ')
+
     }
 }
 
@@ -103,4 +111,4 @@ const formFields = {
     price: "perPrice"
 }
 const objetoProductList = new ProductList(formFields);
-objetoProductList.read();
+objetoProductList.refreshData();
